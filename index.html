@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>尺寸投影</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.4.0/dist/model-viewer.min.js"></script>
+<style>
+  :root { --bg:#f4f1ec; --card:#fff; --ink:#22252a; --sub:#6b7280; --line:#e3ded6; --accent:#e2603a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans","Noto Sans SC",sans-serif;
+    -webkit-text-size-adjust:100%; }
+  main { max-width:520px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:24px; margin:4px 0 4px; }
+  .lead { color:var(--sub); font-size:14px; margin:0 0 16px; line-height:1.5; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
+  .seg { display:flex; background:var(--bg); border-radius:12px; padding:4px; margin-bottom:14px; }
+  .seg button { flex:1; border:0; background:none; padding:10px 0; font-size:15px; border-radius:9px; color:var(--sub); }
+  .seg button.on { background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  label { display:block; font-size:13px; color:var(--sub); margin-bottom:6px; }
+  .row { display:flex; gap:10px; }
+  .row > div { flex:1; min-width:0; }
+  input, select { width:100%; font-size:18px; padding:11px 10px; border:1px solid var(--line); border-radius:10px;
+    background:#fff; color:var(--ink); -webkit-appearance:none; appearance:none; }
+  input:focus, select:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  .paste { margin-bottom:14px; }
+  .paste input { font-size:15px; }
+  .unit { width:92px; flex:none !important; }
+  model-viewer { width:100%; height:240px; background:linear-gradient(#faf8f4,#ece7df); border-radius:12px; }
+  .summary { text-align:center; font-size:14px; color:var(--sub); margin:10px 0 0; }
+  .go { display:block; width:100%; border:0; border-radius:14px; background:var(--accent); color:#fff;
+    font-size:18px; font-weight:600; padding:16px; margin-top:4px; }
+  .go:disabled { opacity:.45; }
+  .msg { display:none; margin-top:12px; padding:12px; border-radius:10px; background:#fff4e5; color:#7a4a00; font-size:14px; line-height:1.6; }
+  .msg.show { display:block; }
+  .tips { font-size:13px; color:var(--sub); line-height:1.7; padding-left:18px; margin:8px 0 0; }
+  .recent { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .recent button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font-size:13px; color:var(--ink); }
+  h2 { font-size:14px; margin:0; color:var(--sub); font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>尺寸投影</h1>
+  <p class="lead">输入商家给的尺寸，用相机把它按真实大小放在你家地上。</p>
+
+  <div class="card">
+    <div class="seg" id="seg">
+      <button type="button" data-mode="flat" class="on">平面（地毯 / 地垫）</button>
+      <button type="button" data-mode="box">立体（箱子 / 柜子）</button>
+    </div>
+
+    <div class="paste">
+      <label for="paste">直接粘贴商家写的尺寸（可选）</label>
+      <input id="paste" type="text" inputmode="text" placeholder="例如 160×230 或 80*40*120" autocomplete="off">
+    </div>
+
+    <div class="row">
+      <div><label for="len">长</label><input id="len" type="number" inputmode="decimal" min="0" step="any" value="160"></div>
+      <div><label for="wid">宽</label><input id="wid" type="number" inputmode="decimal" min="0" step="any" value="230"></div>
+      <div id="hBox" hidden><label for="hei">高</label><input id="hei" type="number" inputmode="decimal" min="0" step="any" value="80"></div>
+      <div class="unit"><label for="unit">单位</label>
+        <select id="unit"><option value="0.01">厘米</option><option value="0.001">毫米</option><option value="1">米</option><option value="0.0254">英寸</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <model-viewer id="mv" ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor"
+      camera-controls touch-action="pan-y" shadow-intensity="1" camera-orbit="35deg 65deg auto"
+      interaction-prompt="none" alt="按输入尺寸生成的方块">
+      <span slot="ar-button"></span>
+    </model-viewer>
+    <p class="summary" id="summary"></p>
+  </div>
+
+  <button class="go" id="go" type="button" disabled>打开相机，放到地上看看</button>
+  <div class="msg" id="msg"></div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>使用方法</h2>
+    <ol class="tips">
+      <li>点上面的按钮，允许使用相机，然后拿手机对着地面慢慢左右移动几下，让它认出地板。</li>
+      <li>方块出现后，单指拖动可以挪位置，双指旋转可以转方向。大小是锁定的，不会被误缩放。</li>
+      <li>光线充足、地面有纹理时最准；纯白反光的地板识别会慢一些。误差通常在几厘米以内，适合判断“放不放得下”，不适合卡着毫米下单。</li>
+    </ol>
+  </div>
+
+  <div class="card" id="recentCard" hidden>
+    <h2>最近看过的尺寸</h2>
+    <div class="recent" id="recent"></div>
+  </div>
+</main>
+
+<script>
+/* ---------- 生成一个真实尺寸（单位：米）的方块 GLB 模型 ---------- */
+function buildGLB(w, h, d, rgba) {
+  const x = w / 2, z = d / 2;
+  // 6 个面，每面 4 个顶点；底面在 y=0，方块“站”在地上
+  const faces = [
+    { n: [0, 0, 1],  v: [[-x,0,z],[x,0,z],[x,h,z],[-x,h,z]] },
+    { n: [0, 0, -1], v: [[x,0,-z],[-x,0,-z],[-x,h,-z],[x,h,-z]] },
+    { n: [1, 0, 0],  v: [[x,0,z],[x,0,-z],[x,h,-z],[x,h,z]] },
+    { n: [-1, 0, 0], v: [[-x,0,-z],[-x,0,z],[-x,h,z],[-x,h,-z]] },
+    { n: [0, 1, 0],  v: [[-x,h,z],[x,h,z],[x,h,-z],[-x,h,-z]] },
+    { n: [0, -1, 0], v: [[-x,0,-z],[x,0,-z],[x,0,z],[-x,0,z]] }
+  ];
+  const pos = new Float32Array(72), nor = new Float32Array(72), idx = new Uint16Array(36);
+  faces.forEach((f, i) => {
+    f.v.forEach((p, j) => { pos.set(p, (i * 4 + j) * 3); nor.set(f.n, (i * 4 + j) * 3); });
+    const b = i * 4;
+    idx.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
+  });
+  const bin = new Uint8Array(288 + 288 + 72);
+  bin.set(new Uint8Array(pos.buffer), 0);
+  bin.set(new Uint8Array(nor.buffer), 288);
+  bin.set(new Uint8Array(idx.buffer), 576);
+
+  const json = {
+    asset: { version: "2.0", generator: "size-projector" },
+    scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0, name: "box" }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0, NORMAL: 1 }, indices: 2, material: 0 }] }],
+    materials: [{ name: "m", pbrMetallicRoughness: { baseColorFactor: rgba, metallicFactor: 0, roughnessFactor: 0.9 },
+      alphaMode: rgba[3] < 1 ? "BLEND" : "OPAQUE" }],
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 24, type: "VEC3", min: [-x, 0, -z], max: [x, h, z] },
+      { bufferView: 1, componentType: 5126, count: 24, type: "VEC3" },
+      { bufferView: 2, componentType: 5123, count: 36, type: "SCALAR" }
+    ],
+    bufferViews: [
+      { buffer: 0, byteOffset: 0, byteLength: 288, target: 34962 },
+      { buffer: 0, byteOffset: 288, byteLength: 288, target: 34962 },
+      { buffer: 0, byteOffset: 576, byteLength: 72, target: 34963 }
+    ],
+    buffers: [{ byteLength: 648 }]
+  };
+  let jb = new TextEncoder().encode(JSON.stringify(json));
+  const pad = (4 - jb.length % 4) % 4;
+  if (pad) { const t = new Uint8Array(jb.length + pad).fill(0x20); t.set(jb); jb = t; }
+
+  const total = 12 + 8 + jb.length + 8 + bin.length;
+  const out = new Uint8Array(total), dv = new DataView(out.buffer);
+  dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
+  dv.setUint32(12, jb.length, true); dv.setUint32(16, 0x4E4F534A, true); out.set(jb, 20);
+  const o = 20 + jb.length;
+  dv.setUint32(o, bin.length, true); dv.setUint32(o + 4, 0x004E4942, true); out.set(bin, o + 8);
+  return out;
+}
+
+/* 从 “160×230cm” “80*40*120” 这类文字里取出数字 */
+function parseSizes(text) {
+  return (text.match(/\d+(?:\.\d+)?/g) || []).map(Number).filter(n => n > 0).slice(0, 3);
+}
+
+if (typeof module !== "undefined") module.exports = { buildGLB, parseSizes };
+</script>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const mv = $("mv"), go = $("go"), msg = $("msg");
+  const FLAT_THICKNESS = 0.01;            // 平面模式按 1 厘米厚显示
+  const COLOR = [0.89, 0.38, 0.23, 0.82]; // 半透明橙色，能透过它看到地面
+  let mode = "flat", url = null, timer = null;
+
+  function store(k, v) {
+    try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }
+    catch (e) { return null; }
+  }
+
+  function current() {
+    const u = parseFloat($("unit").value);
+    const l = parseFloat($("len").value) * u, w = parseFloat($("wid").value) * u;
+    const h = mode === "flat" ? FLAT_THICKNESS : parseFloat($("hei").value) * u;
+    return { l, w, h, ok: [l, w, h].every(n => isFinite(n) && n > 0 && n <= 20) };
+  }
+
+  function fmt(m) { return m >= 1 ? (+m.toFixed(2)) + " 米" : (+(m * 100).toFixed(1)) + " 厘米"; }
+
+  function render() {
+    const s = current();
+    msg.classList.remove("show");
+    if (!s.ok) { go.disabled = true; $("summary").textContent = "请输入大于 0 的尺寸（单边不超过 20 米）"; return; }
+    $("summary").textContent = mode === "flat"
+      ? "长 " + fmt(s.l) + " × 宽 " + fmt(s.w) + "，占地 " + (+(s.l * s.w).toFixed(2)) + " 平方米"
+      : "长 " + fmt(s.l) + " × 宽 " + fmt(s.w) + " × 高 " + fmt(s.h);
+    go.disabled = true;
+    const old = url;
+    url = URL.createObjectURL(new Blob([buildGLB(s.l, s.h, s.w, COLOR)], { type: "model/gltf-binary" }));
+    mv.src = url;
+    if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
+  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(render, 250); }
+
+  mv.addEventListener("load", () => { go.disabled = false; });
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("hBox").hidden = m === "flat";
+    render();
+  }
+  $("seg").addEventListener("click", e => { if (e.target.dataset.mode) setMode(e.target.dataset.mode); });
+  ["len", "wid", "hei"].forEach(id => $(id).addEventListener("input", schedule));
+  $("unit").addEventListener("change", render);
+
+  $("paste").addEventListener("input", e => {
+    const n = parseSizes(e.target.value);
+    if (n.length < 2) return;
+    $("len").value = n[0]; $("wid").value = n[1];
+    if (n.length === 3) { $("hei").value = n[2]; setMode("box"); } else schedule();
+  });
+
+  function saveRecent() {
+    const item = { mode, len: $("len").value, wid: $("wid").value, hei: $("hei").value, unit: $("unit").value };
+    const key = JSON.stringify(item);
+    const list = (store("recent") || []).filter(i => JSON.stringify(i) !== key);
+    list.unshift(item); store("recent", list.slice(0, 6)); drawRecent();
+  }
+  function drawRecent() {
+    const list = store("recent") || [], box = $("recent");
+    $("recentCard").hidden = !list.length; box.textContent = "";
+    list.forEach(i => {
+      const b = document.createElement("button"), un = $("unit").querySelector('option[value="' + i.unit + '"]');
+      b.type = "button";
+      b.textContent = (i.mode === "flat" ? [i.len, i.wid] : [i.len, i.wid, i.hei]).join("×") + " " + (un ? un.textContent : "");
+      b.onclick = () => {
+        $("len").value = i.len; $("wid").value = i.wid; $("hei").value = i.hei; $("unit").value = i.unit;
+        $("paste").value = ""; setMode(i.mode); window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      box.appendChild(b);
+    });
+  }
+
+  go.addEventListener("click", () => {
+    if (!mv.canActivateAR) {
+      const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), android = /Android/.test(ua);
+      msg.textContent = ios ? "这个浏览器打不开 AR。请把网址复制到 Safari 里打开（微信等 App 内置浏览器不支持）。"
+        : android ? "这台手机的浏览器打不开 AR。请用 Chrome 打开，并确认手机装有“Google Play Services for AR”（部分没有谷歌服务的机型不支持）。"
+        : "电脑上只能看预览。请用手机打开这个网页：iPhone 用 Safari，安卓用 Chrome。";
+      msg.classList.add("show");
+      return;
+    }
+    saveRecent();
+    mv.activateAR();
+  });
+
+  customElements.whenDefined("model-viewer").then(render);
+  setTimeout(() => {
+    if (!customElements.get("model-viewer")) {
+      msg.textContent = "3D 组件没有加载出来，请检查网络后刷新页面。"; msg.classList.add("show");
+    }
+  }, 8000);
+  drawRecent();
+})();
+</script>
+</body>
+</html>
