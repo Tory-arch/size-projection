@@ -15,9 +15,11 @@
   h1 { font-size:24px; margin:4px 0 4px; }
   .lead { color:var(--sub); font-size:14px; margin:0 0 16px; line-height:1.5; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
-  .seg { display:flex; background:var(--bg); border-radius:12px; padding:4px; margin-bottom:14px; }
-  .seg button { flex:1; border:0; background:none; padding:10px 0; font-size:15px; border-radius:9px; color:var(--sub); }
-  .seg button.on { background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .cats { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:16px; }
+  .cats button { border:1px solid var(--line); background:#fff; border-radius:12px; padding:8px 0 7px; font-size:12px; color:var(--sub);
+    display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .cats button i { font-style:normal; font-size:22px; line-height:1.2; }
+  .cats button.on { border-color:var(--accent); background:#fdf1ec; color:var(--ink); font-weight:600; }
   label { display:block; font-size:13px; color:var(--sub); margin-bottom:6px; }
   .row { display:flex; gap:10px; }
   .row > div { flex:1; min-width:0; }
@@ -35,21 +37,27 @@
   .msg { display:none; margin-top:12px; padding:12px; border-radius:10px; background:#fff4e5; color:#7a4a00; font-size:14px; line-height:1.6; }
   .msg.show { display:block; }
   .tips { font-size:13px; color:var(--sub); line-height:1.7; padding-left:18px; margin:8px 0 0; }
-  .recent { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .recent button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font-size:13px; color:var(--ink); }
+  .add { display:block; width:100%; margin-top:12px; border:1px dashed var(--line); background:none; border-radius:10px;
+    padding:10px; font-size:14px; color:var(--ink); }
+  .cands { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .cand { display:flex; align-items:stretch; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; }
+  .cand .pick { flex:1; display:flex; align-items:center; gap:10px; border:0; background:none; padding:14px 12px; font-size:16px; color:var(--ink); text-align:left; }
+  .cand .del { border:0; border-left:1px solid var(--line); background:none; width:46px; font-size:18px; color:var(--sub); }
+  .dot { width:14px; height:14px; border-radius:4px; flex:none; display:inline-block; }
+  .cmp { display:block; width:100%; margin-top:10px; border:0; border-radius:12px; background:var(--ink); color:#fff; font-size:15px; font-weight:600; padding:13px; }
+  .legend { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .hint { font-size:12px; color:var(--sub); margin:8px 0 0; line-height:1.5; }
   h2 { font-size:14px; margin:0; color:var(--sub); font-weight:600; }
 </style>
 </head>
 <body>
 <main>
   <h1>尺寸投影</h1>
-  <p class="lead">输入商家给的尺寸，用相机把它按真实大小放在你家地上。</p>
+  <p class="lead">选品类、输入商家给的尺寸，用相机把它按真实大小放在你家地上。</p>
 
   <div class="card">
-    <div class="seg" id="seg">
-      <button type="button" data-mode="flat" class="on">平面（地毯 / 地垫）</button>
-      <button type="button" data-mode="box">立体（箱子 / 柜子）</button>
-    </div>
+    <div class="cats" id="cats"></div>
 
     <div class="paste">
       <label for="paste">直接粘贴商家写的尺寸（可选）</label>
@@ -57,19 +65,27 @@
     </div>
 
     <div class="row">
-      <div><label for="len">长</label><input id="len" type="number" inputmode="decimal" min="0" step="any" value="160"></div>
-      <div><label for="wid">宽</label><input id="wid" type="number" inputmode="decimal" min="0" step="any" value="230"></div>
-      <div id="hBox" hidden><label for="hei">高</label><input id="hei" type="number" inputmode="decimal" min="0" step="any" value="80"></div>
+      <div><label for="len" id="lblLen">长</label><input id="len" type="number" inputmode="decimal" min="0" step="any" value="160"></div>
+      <div><label for="wid" id="lblWid">宽</label><input id="wid" type="number" inputmode="decimal" min="0" step="any" value="230"></div>
+      <div id="hBox" hidden><label for="hei" id="lblHei">高</label><input id="hei" type="number" inputmode="decimal" min="0" step="any" value="80"></div>
       <div class="unit"><label for="unit">单位</label>
         <select id="unit"><option value="0.01">厘米</option><option value="0.001">毫米</option><option value="1">米</option><option value="0.0254">英寸</option></select>
       </div>
     </div>
+    <button class="add" id="add" type="button">＋ 把这个尺寸加入候选</button>
+  </div>
+
+  <div class="card" id="candCard" hidden>
+    <h2>候选尺寸</h2>
+    <div class="cands" id="cands"></div>
+    <button class="cmp" id="cmp" type="button" hidden></button>
+    <p class="hint">点某个候选会直接进相机；从相机返回后，再点另一个就能马上换。</p>
   </div>
 
   <div class="card">
     <model-viewer id="mv" ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor"
       camera-controls touch-action="pan-y" shadow-intensity="1" camera-orbit="35deg 65deg auto"
-      interaction-prompt="none" alt="按输入尺寸生成的方块">
+      interaction-prompt="none" alt="按输入尺寸生成的简化模型">
       <span slot="ar-button"></span>
     </model-viewer>
     <p class="summary" id="summary"></p>
@@ -82,63 +98,67 @@
     <h2>使用方法</h2>
     <ol class="tips">
       <li>点上面的按钮，允许使用相机，然后拿手机对着地面慢慢左右移动几下，让它认出地板。</li>
-      <li>方块出现后，单指拖动可以挪位置，双指旋转可以转方向。大小是锁定的，不会被误缩放。</li>
+      <li>模型出现后，单指拖动可以挪位置，双指旋转可以转方向。大小是锁定的，不会被误缩放。</li>
+      <li>模型是按尺寸生成的简化外形，外轮廓和你输入的长宽高一致，细节（桌腿粗细、柜门数量等）只是示意。</li>
+      <li>在几个尺寸之间犹豫时，先把它们都“加入候选”，再点“一起放到地上对比”，不同颜色代表不同尺寸，不用来回切换。</li>
       <li>光线充足、地面有纹理时最准；纯白反光的地板识别会慢一些。误差通常在几厘米以内，适合判断“放不放得下”，不适合卡着毫米下单。</li>
     </ol>
   </div>
 
-  <div class="card" id="recentCard" hidden>
-    <h2>最近看过的尺寸</h2>
-    <div class="recent" id="recent"></div>
-  </div>
 </main>
 
 <script>
 /* ---------- 生成一个真实尺寸（单位：米）的方块 GLB 模型 ---------- */
-function buildGLB(w, h, d, rgba) {
-  const x = w / 2, z = d / 2;
-  // 6 个面，每面 4 个顶点；底面在 y=0，方块“站”在地上
-  const faces = [
-    { n: [0, 0, 1],  v: [[-x,0,z],[x,0,z],[x,h,z],[-x,h,z]] },
-    { n: [0, 0, -1], v: [[x,0,-z],[-x,0,-z],[-x,h,-z],[x,h,-z]] },
-    { n: [1, 0, 0],  v: [[x,0,z],[x,0,-z],[x,h,-z],[x,h,z]] },
-    { n: [-1, 0, 0], v: [[-x,0,-z],[-x,0,z],[-x,h,z],[-x,h,-z]] },
-    { n: [0, 1, 0],  v: [[-x,h,z],[x,h,z],[x,h,-z],[-x,h,-z]] },
-    { n: [0, -1, 0], v: [[-x,0,-z],[x,0,-z],[x,0,z],[-x,0,z]] }
-  ];
-  const pos = new Float32Array(72), nor = new Float32Array(72), idx = new Uint16Array(36);
-  faces.forEach((f, i) => {
-    f.v.forEach((p, j) => { pos.set(p, (i * 4 + j) * 3); nor.set(f.n, (i * 4 + j) * 3); });
-    const b = i * 4;
-    idx.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
-  });
-  const bin = new Uint8Array(288 + 288 + 72);
-  bin.set(new Uint8Array(pos.buffer), 0);
-  bin.set(new Uint8Array(nor.buffer), 288);
-  bin.set(new Uint8Array(idx.buffer), 576);
-
+function buildGLB(items) {
+  // items: [{w,h,d, x,y,z, rgba}]  w=长(x) h=高(y) d=宽(z)；x/z 是中心偏移，y 是底面高度
   const json = {
     asset: { version: "2.0", generator: "size-projector" },
-    scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0, name: "box" }],
-    meshes: [{ primitives: [{ attributes: { POSITION: 0, NORMAL: 1 }, indices: 2, material: 0 }] }],
-    materials: [{ name: "m", pbrMetallicRoughness: { baseColorFactor: rgba, metallicFactor: 0, roughnessFactor: 0.9 },
-      alphaMode: rgba[3] < 1 ? "BLEND" : "OPAQUE" }],
-    accessors: [
-      { bufferView: 0, componentType: 5126, count: 24, type: "VEC3", min: [-x, 0, -z], max: [x, h, z] },
-      { bufferView: 1, componentType: 5126, count: 24, type: "VEC3" },
-      { bufferView: 2, componentType: 5123, count: 36, type: "SCALAR" }
-    ],
-    bufferViews: [
-      { buffer: 0, byteOffset: 0, byteLength: 288, target: 34962 },
-      { buffer: 0, byteOffset: 288, byteLength: 288, target: 34962 },
-      { buffer: 0, byteOffset: 576, byteLength: 72, target: 34963 }
-    ],
-    buffers: [{ byteLength: 648 }]
+    scene: 0, scenes: [{ nodes: [] }], nodes: [], meshes: [], materials: [],
+    accessors: [], bufferViews: [], buffers: [{ byteLength: items.length * 648 }]
   };
+  const bin = new Uint8Array(items.length * 648);
+  items.forEach((it, k) => {
+    const x0 = (it.x || 0) - it.w / 2, x1 = (it.x || 0) + it.w / 2;
+    const z0 = (it.z || 0) - it.d / 2, z1 = (it.z || 0) + it.d / 2;
+    const y0 = it.y || 0, y1 = y0 + it.h;
+    const faces = [
+      { n: [0, 0, 1],  v: [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]] },
+      { n: [0, 0, -1], v: [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]] },
+      { n: [1, 0, 0],  v: [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]] },
+      { n: [-1, 0, 0], v: [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]] },
+      { n: [0, 1, 0],  v: [[x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0]] },
+      { n: [0, -1, 0], v: [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]] }
+    ];
+    const pos = new Float32Array(72), nor = new Float32Array(72), idx = new Uint16Array(36);
+    faces.forEach((f, i) => {
+      f.v.forEach((p, j) => { pos.set(p, (i * 4 + j) * 3); nor.set(f.n, (i * 4 + j) * 3); });
+      const b = i * 4;
+      idx.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
+    });
+    const o = k * 648;
+    bin.set(new Uint8Array(pos.buffer), o);
+    bin.set(new Uint8Array(nor.buffer), o + 288);
+    bin.set(new Uint8Array(idx.buffer), o + 576);
+    const f32 = v => Math.fround(v);
+    json.bufferViews.push(
+      { buffer: 0, byteOffset: o, byteLength: 288, target: 34962 },
+      { buffer: 0, byteOffset: o + 288, byteLength: 288, target: 34962 },
+      { buffer: 0, byteOffset: o + 576, byteLength: 72, target: 34963 });
+    json.accessors.push(
+      { bufferView: k * 3, componentType: 5126, count: 24, type: "VEC3",
+        min: [f32(x0), f32(y0), f32(z0)], max: [f32(x1), f32(y1), f32(z1)] },
+      { bufferView: k * 3 + 1, componentType: 5126, count: 24, type: "VEC3" },
+      { bufferView: k * 3 + 2, componentType: 5123, count: 36, type: "SCALAR" });
+    json.materials.push({ name: "m" + k,
+      pbrMetallicRoughness: { baseColorFactor: it.rgba, metallicFactor: 0, roughnessFactor: 0.9 },
+      alphaMode: it.rgba[3] < 1 ? "BLEND" : "OPAQUE" });
+    json.meshes.push({ primitives: [{ attributes: { POSITION: k * 3, NORMAL: k * 3 + 1 }, indices: k * 3 + 2, material: k }] });
+    json.nodes.push({ mesh: k, name: "box" + k });
+    json.scenes[0].nodes.push(k);
+  });
   let jb = new TextEncoder().encode(JSON.stringify(json));
   const pad = (4 - jb.length % 4) % 4;
   if (pad) { const t = new Uint8Array(jb.length + pad).fill(0x20); t.set(jb); jb = t; }
-
   const total = 12 + 8 + jb.length + 8 + bin.length;
   const out = new Uint8Array(total), dv = new DataView(out.buffer);
   dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
@@ -148,111 +168,276 @@ function buildGLB(w, h, d, rgba) {
   return out;
 }
 
+/* ---------- 品类：每个品类用几个方块拼出简化模型，外轮廓严格等于输入的尺寸 ---------- */
+const B = (w, h, d, x, y, z, s) => ({ w, h, d, x, y, z, s });   // x/z 为中心，y 为底面高度，s 为配色 a/b/c
+const WOOD = [[0.74,0.56,0.37],[0.52,0.38,0.25],[0.22,0.22,0.24]];
+const CATS = {
+  rug: { name: "地毯", icon: "🧶", labels: ["长", "宽"], def: [160, 230], flat: true,
+    pal: [[0.72,0.40,0.30],[0.90,0.82,0.70],[1,1,1]],
+    parts: (l, w) => [B(l, 0.01, w, 0, 0, 0, "a"), B(l * 0.86, 0.002, w * 0.86, 0, 0.01, 0, "b")] },
+  table: { name: "桌子", icon: "🪵", labels: ["长", "宽", "高"], def: [120, 60, 75], pal: WOOD,
+    parts: (l, w, h) => {
+      const tt = Math.min(0.04, h * 0.15), s = Math.min(0.06, l * 0.12, w * 0.12), inset = Math.min(0.03, l * 0.05, w * 0.05);
+      const lx = l / 2 - inset - s / 2, lz = w / 2 - inset - s / 2;
+      return [B(l, tt, w, 0, h - tt, 0, "a"),
+        B(s, h - tt, s, lx, 0, lz, "b"), B(s, h - tt, s, -lx, 0, lz, "b"),
+        B(s, h - tt, s, lx, 0, -lz, "b"), B(s, h - tt, s, -lx, 0, -lz, "b")];
+    } },
+  chair: { name: "椅子", icon: "🪑", labels: ["宽", "深", "高"], def: [45, 50, 85], pal: WOOD,
+    parts: (l, w, h) => {
+      const sh = Math.min(0.45, h * 0.55), st = Math.min(0.04, sh * 0.2), s = Math.min(0.04, l * 0.12, w * 0.12);
+      const lx = l / 2 - s / 2, lz = w / 2 - s / 2;
+      return [B(l - 0.004, st, w - 0.004, 0, sh - st, 0, "a"),
+        B(s, sh - st, s, lx, 0, lz, "b"), B(s, sh - st, s, -lx, 0, lz, "b"),
+        B(s, h, s, lx, 0, -lz, "b"), B(s, h, s, -lx, 0, -lz, "b"),
+        B(l - 2 * s, (h - sh) * 0.5, s * 0.6, 0, sh + (h - sh) * 0.5, -lz, "a")];
+    } },
+  sofa: { name: "沙发", icon: "🛋️", labels: ["宽", "深", "高"], def: [200, 90, 85],
+    pal: [[0.47,0.54,0.62],[0.36,0.42,0.50],[0.9,0.9,0.9]],
+    parts: (l, w, h) => {
+      const sh = Math.min(0.42, h * 0.55), aw = Math.min(0.18, l * 0.12), bt = Math.min(0.22, w * 0.25);
+      const ah = Math.min(h, sh + 0.2), ch = Math.min(0.12, sh * 0.3);
+      return [B(l, h, bt, 0, 0, -w / 2 + bt / 2, "a"),
+        B(aw, ah, w - bt, l / 2 - aw / 2, 0, bt / 2, "a"), B(aw, ah, w - bt, -(l / 2 - aw / 2), 0, bt / 2, "a"),
+        B(l - 2 * aw, sh - ch, w - bt - 0.02, 0, 0, bt / 2 - 0.01, "b"),
+        B(l - 2 * aw, ch, w - bt, 0, sh - ch, bt / 2, "a")];
+    } },
+  bed: { name: "床", icon: "🛏️", labels: ["宽", "长", "床头高"], def: [150, 200, 90],
+    pal: [[0.62,0.50,0.40],[0.45,0.35,0.27],[0.95,0.94,0.92]],
+    parts: (l, w, h) => {
+      const ht = Math.min(0.06, w * 0.05), mh = Math.min(0.5, h * 0.6), fh = mh * 0.5;
+      const pw = Math.min(0.6, l * 0.42), pd = Math.min(0.4, w * 0.2), pz = -w / 2 + ht + Math.min(0.06, w * 0.03) + pd / 2;
+      return [B(l, h, ht, 0, 0, -w / 2 + ht / 2, "a"),
+        B(l, fh, w - ht, 0, 0, ht / 2, "b"),
+        B(l - 0.04, mh - fh, w - ht - 0.04, 0, fh, ht / 2, "c"),
+        B(pw, Math.min(0.08, h - mh), pd, l / 4, mh, pz, "a"), B(pw, Math.min(0.08, h - mh), pd, -l / 4, mh, pz, "a")];
+    } },
+  cabinet: { name: "柜子", icon: "🚪", labels: ["宽", "深", "高"], def: [80, 40, 180], pal: WOOD,
+    parts: (l, w, h) => {
+      const n = l < 0.6 ? 1 : 2, fh = Math.min(0.06, h * 0.08), g = 0.008, dw = (l - g * (n + 1)) / n, dh = h - fh - g;
+      const hh = Math.min(0.14, dh * 0.3), out = [B(l, h, w - 0.012, 0, 0, -0.006, "b")];
+      for (let i = 0; i < n; i++) {
+        const cx = -l / 2 + g + dw / 2 + i * (dw + g);
+        out.push(B(dw, dh, 0.008, cx, fh, w / 2 - 0.008, "a"));
+        const hx = n === 1 ? cx + dw / 2 - 0.04 : cx + (i === 0 ? 1 : -1) * (dw / 2 - 0.03);
+        const lim = Math.max(0, l / 2 - 0.006), hxc = Math.max(-lim, Math.min(lim, hx));
+        out.push(B(Math.min(0.012, l), hh, 0.004, hxc, fh + dh / 2 - hh / 2, w / 2 - 0.002, "c"));
+      }
+      return out;
+    } },
+  shelf: { name: "置物架", icon: "📚", labels: ["宽", "深", "高"], def: [80, 30, 150], pal: WOOD,
+    parts: (l, w, h) => {
+      const t = Math.min(0.02, l * 0.05, h * 0.05), n = Math.max(2, Math.round(h / 0.35)) + 1;
+      const out = [B(t, h, w, l / 2 - t / 2, 0, 0, "a"), B(t, h, w, -(l / 2 - t / 2), 0, 0, "a")];
+      for (let i = 0; i < n; i++) out.push(B(l - 2 * t, t, w - 0.004, 0, i * (h - t) / (n - 1), 0, "b"));
+      return out;
+    } },
+  box: { name: "箱子", icon: "📦", labels: ["长", "宽", "高"], def: [60, 40, 35],
+    pal: [[0.80,0.84,0.88],[0.36,0.50,0.64],[1,1,1]],
+    parts: (l, w, h) => { const lh = Math.min(0.06, h * 0.15);
+      return [B(l - 0.01, h - lh, w - 0.01, 0, 0, 0, "a"), B(l, lh, w, 0, h - lh, 0, "b")]; } },
+  appliance: { name: "家电", icon: "🧊", labels: ["宽", "深", "高"], def: [60, 65, 170],
+    pal: [[0.80,0.82,0.85],[0.94,0.95,0.96],[0.28,0.31,0.35]],
+    parts: (l, w, h) => {
+      const out = [B(l, h, w - 0.012, 0, 0, -0.006, "a")], pz = w / 2 - 0.008, hz = w / 2 - 0.002, pw = l - 0.012;
+      if (h >= 1.1) {           // 高的按冰箱画：上下两扇门
+        const split = h * 0.4;
+        out.push(B(pw, split - 0.03, 0.008, 0, 0.024, pz, "b"), B(pw, h - split - 0.012, 0.008, 0, split + 0.006, pz, "b"));
+        out.push(B(0.014, Math.min(0.3, h * 0.2), 0.004, l / 2 - 0.05, split + 0.05, hz, "c"),
+                 B(0.014, Math.min(0.2, split * 0.3), 0.004, l / 2 - 0.05, split - 0.05 - Math.min(0.2, split * 0.3), hz, "c"));
+      } else {                  // 矮的按洗衣机画：一块面板加一个视窗
+        const q = Math.min(l, h) * 0.5;
+        out.push(B(pw, h - 0.03, 0.008, 0, 0.024, pz, "b"), B(q, q, 0.004, 0, (h - q) / 2, hz, "c"));
+      }
+      return out;
+    } },
+  other: { name: "其他", icon: "⬜", labels: ["长", "宽", "高"], def: [60, 40, 80],
+    pal: [[0.89,0.38,0.23],[0.7,0.3,0.18],[1,1,1]],
+    parts: (l, w, h) => [B(l, h, w, 0, 0, 0, "a")] }
+};
+const RUG_H = 0.012;
+
+/* 把一个或多个物品摆好并上色。全是地毯 → 中心对齐、小的叠在大的上面；否则 → 并排，间隔 10 厘米 */
+function layout(list) {
+  // list: [{cat,l,w,h,pal}]（米），pal 不传则用品类自己的配色
+  const place = (it, dx, dy) => CATS[it.cat].parts(it.l, it.w, it.h).map(p => {
+    const pal = it.pal || CATS[it.cat].pal, c = pal["abc".indexOf(p.s)];
+    return { w: p.w, h: p.h, d: p.d, x: p.x + dx, y: p.y + dy, z: p.z, rgba: [c[0], c[1], c[2], 1] };
+  });
+  if (list.length > 1 && list.every(i => CATS[i.cat].flat)) {
+    const order = list.map((it, k) => k).sort((a, b) => list[b].l * list[b].w - list[a].l * list[a].w);
+    return [].concat(...order.map((k, rank) => place(list[k], 0, rank * RUG_H)));
+  }
+  const gap = 0.1, total = list.reduce((s, i) => s + i.l, 0) + gap * (list.length - 1);
+  let cur = -total / 2; const out = [];
+  list.forEach(it => { out.push(...place(it, cur + it.l / 2, 0)); cur += it.l + gap; });
+  return out;
+}
+
 /* 从 “160×230cm” “80*40*120” 这类文字里取出数字 */
 function parseSizes(text) {
   return (text.match(/\d+(?:\.\d+)?/g) || []).map(Number).filter(n => n > 0).slice(0, 3);
 }
 
-if (typeof module !== "undefined") module.exports = { buildGLB, parseSizes };
+if (typeof module !== "undefined") module.exports = { buildGLB, parseSizes, layout, CATS };
 </script>
 
 <script>
 (function () {
   const $ = id => document.getElementById(id);
   const mv = $("mv"), go = $("go"), msg = $("msg");
-  const FLAT_THICKNESS = 0.01;            // 平面模式按 1 厘米厚显示
-  const COLOR = [0.89, 0.38, 0.23, 0.82]; // 半透明橙色，能透过它看到地面
-  let mode = "flat", url = null, timer = null;
+  const MAX = 4;
+  const COLORS = [[0.89,0.38,0.23],[0.16,0.47,0.85],[0.18,0.62,0.38],[0.58,0.35,0.78]];
+  const css = c => "rgb(" + c.map(v => Math.round(v * 255)).join(",") + ")";
+  const tint = c => [c, c.map(v => v * 0.7), c.map(v => v * 0.35 + 0.65)];   // 对比时整件物品染成候选色
+  let cat = "rug", view = "single", url = null, timer = null, pendingAR = false, dirty = false;
 
   function store(k, v) {
     try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }
     catch (e) { return null; }
   }
+  let cands = (store("cands") || []).filter(c => c && CATS[c.cat]).slice(0, MAX);
 
-  function current() {
-    const u = parseFloat($("unit").value);
-    const l = parseFloat($("len").value) * u, w = parseFloat($("wid").value) * u;
-    const h = mode === "flat" ? FLAT_THICKNESS : parseFloat($("hei").value) * u;
-    return { l, w, h, ok: [l, w, h].every(n => isFinite(n) && n > 0 && n <= 20) };
+  function inputItem() { return { cat, len: $("len").value, wid: $("wid").value, hei: $("hei").value, unit: $("unit").value }; }
+  function dims(it) {
+    const u = parseFloat(it.unit), l = parseFloat(it.len) * u, w = parseFloat(it.wid) * u;
+    const h = CATS[it.cat].flat ? RUG_H : parseFloat(it.hei) * u;
+    return { cat: it.cat, l, w, h, ok: [l, w, h].every(n => isFinite(n) && n >= 0.01 && n <= 20) };
   }
-
+  function label(it) {
+    const un = $("unit").querySelector('option[value="' + it.unit + '"]');
+    return CATS[it.cat].name + " " + (CATS[it.cat].flat ? [it.len, it.wid] : [it.len, it.wid, it.hei]).join("×") + " " + (un ? un.textContent : "");
+  }
   function fmt(m) { return m >= 1 ? (+m.toFixed(2)) + " 米" : (+(m * 100).toFixed(1)) + " 厘米"; }
+  function say(t) { msg.textContent = t; msg.classList.add("show"); }
 
-  function render() {
-    const s = current();
-    msg.classList.remove("show");
-    if (!s.ok) { go.disabled = true; $("summary").textContent = "请输入大于 0 的尺寸（单边不超过 20 米）"; return; }
-    $("summary").textContent = mode === "flat"
-      ? "长 " + fmt(s.l) + " × 宽 " + fmt(s.w) + "，占地 " + (+(s.l * s.w).toFixed(2)) + " 平方米"
-      : "长 " + fmt(s.l) + " × 宽 " + fmt(s.w) + " × 高 " + fmt(s.h);
+  function show(boxes) {
     go.disabled = true;
     const old = url;
-    url = URL.createObjectURL(new Blob([buildGLB(s.l, s.h, s.w, COLOR)], { type: "model/gltf-binary" }));
+    url = URL.createObjectURL(new Blob([buildGLB(boxes)], { type: "model/gltf-binary" }));
     mv.src = url;
     if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
   }
-  function schedule() { clearTimeout(timer); timer = setTimeout(render, 250); }
 
-  mv.addEventListener("load", () => { go.disabled = false; });
-
-  function setMode(m) {
-    mode = m;
-    document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
-    $("hBox").hidden = m === "flat";
-    render();
+  function render() {
+    msg.classList.remove("show");
+    const sum = $("summary");
+    if (view === "compare" && cands.length >= 2) {
+      const list = cands.map((c, k) => Object.assign(dims(c), { pal: tint(COLORS[k]) }));
+      sum.textContent = "";
+      const lg = document.createElement("div"); lg.className = "legend";
+      cands.forEach((c, k) => {
+        const s = document.createElement("span"), d = document.createElement("i");
+        d.className = "dot"; d.style.background = css(COLORS[k]);
+        s.appendChild(d); s.appendChild(document.createTextNode(label(c))); lg.appendChild(s);
+      });
+      sum.appendChild(lg);
+      const note = document.createElement("div");
+      note.textContent = list.every(i => CATS[i.cat].flat) ? "中心对齐，小的叠在大的上面" : "并排摆放，间隔 10 厘米";
+      sum.appendChild(note);
+      go.textContent = "打开相机，一起放到地上对比";
+      show(layout(list));
+      return;
+    }
+    view = "single";
+    go.textContent = "打开相机，放到地上看看";
+    const s = dims(inputItem()), L = CATS[cat].labels;
+    if (!s.ok) { pendingAR = false; go.disabled = true; sum.textContent = "请输入有效的尺寸（每边 1 厘米到 20 米之间）"; return; }
+    sum.textContent = CATS[cat].flat
+      ? L[0] + " " + fmt(s.l) + " × " + L[1] + " " + fmt(s.w) + "，占地 " + (+(s.l * s.w).toFixed(2)) + " 平方米"
+      : L[0] + " " + fmt(s.l) + " × " + L[1] + " " + fmt(s.w) + " × " + L[2] + " " + fmt(s.h);
+    show(layout([s]));
   }
-  $("seg").addEventListener("click", e => { if (e.target.dataset.mode) setMode(e.target.dataset.mode); });
-  ["len", "wid", "hei"].forEach(id => $(id).addEventListener("input", schedule));
-  $("unit").addEventListener("change", render);
+  function edited() { dirty = true; view = "single"; pendingAR = false; clearTimeout(timer); timer = setTimeout(render, 250); }
 
+  function openAR() {
+    if (!mv.canActivateAR) {
+      const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), android = /Android/.test(ua);
+      say(ios ? "这个浏览器打不开 AR。请把网址复制到 Safari 里打开（微信等 App 内置浏览器不支持）。"
+        : android ? "这台手机的浏览器打不开 AR。请用 Chrome 打开，并确认手机装有“Google Play Services for AR”（部分没有谷歌服务的机型不支持）。"
+        : "电脑上只能看预览。请用手机打开这个网页：iPhone 用 Safari，安卓用 Chrome。");
+      return;
+    }
+    mv.activateAR();
+  }
+  mv.addEventListener("load", () => {
+    go.disabled = false;
+    if (pendingAR) { pendingAR = false; if (mv.canActivateAR) openAR(); }
+  });
+  go.addEventListener("click", openAR);
+
+  /* ---------- 品类 ---------- */
+  function setCat(c, useDefaults) {
+    cat = c;
+    const C = CATS[c];
+    document.querySelectorAll("#cats button").forEach(b => b.classList.toggle("on", b.dataset.cat === c));
+    $("lblLen").textContent = C.labels[0]; $("lblWid").textContent = C.labels[1];
+    $("hBox").hidden = !!C.flat;
+    if (!C.flat) $("lblHei").textContent = C.labels[2];
+    if (useDefaults) {
+      $("unit").value = "0.01"; $("len").value = C.def[0]; $("wid").value = C.def[1];
+      if (!C.flat) $("hei").value = C.def[2];
+    }
+  }
+  Object.keys(CATS).forEach(k => {
+    const b = document.createElement("button"), i = document.createElement("i");
+    b.type = "button"; b.dataset.cat = k; i.textContent = CATS[k].icon;
+    b.appendChild(i); b.appendChild(document.createTextNode(CATS[k].name));
+    // 自己改过尺寸就保留，没改过就换成这个品类的常见尺寸
+    b.onclick = () => { setCat(k, !dirty); view = "single"; pendingAR = false; clearTimeout(timer); render(); };
+    $("cats").appendChild(b);
+  });
+
+  ["len", "wid", "hei"].forEach(id => $(id).addEventListener("input", edited));
+  $("unit").addEventListener("change", edited);
   $("paste").addEventListener("input", e => {
     const n = parseSizes(e.target.value);
     if (n.length < 2) return;
     $("len").value = n[0]; $("wid").value = n[1];
-    if (n.length === 3) { $("hei").value = n[2]; setMode("box"); } else schedule();
+    if (n.length === 3) $("hei").value = n[2];
+    edited();
   });
 
-  function saveRecent() {
-    const item = { mode, len: $("len").value, wid: $("wid").value, hei: $("hei").value, unit: $("unit").value };
-    const key = JSON.stringify(item);
-    const list = (store("recent") || []).filter(i => JSON.stringify(i) !== key);
-    list.unshift(item); store("recent", list.slice(0, 6)); drawRecent();
-  }
-  function drawRecent() {
-    const list = store("recent") || [], box = $("recent");
-    $("recentCard").hidden = !list.length; box.textContent = "";
-    list.forEach(i => {
-      const b = document.createElement("button"), un = $("unit").querySelector('option[value="' + i.unit + '"]');
-      b.type = "button";
-      b.textContent = (i.mode === "flat" ? [i.len, i.wid] : [i.len, i.wid, i.hei]).join("×") + " " + (un ? un.textContent : "");
-      b.onclick = () => {
-        $("len").value = i.len; $("wid").value = i.wid; $("hei").value = i.hei; $("unit").value = i.unit;
-        $("paste").value = ""; setMode(i.mode); window.scrollTo({ top: 0, behavior: "smooth" });
+  /* ---------- 候选尺寸 ---------- */
+  function drawCands() {
+    const box = $("cands"); box.textContent = "";
+    $("candCard").hidden = !cands.length;
+    cands.forEach((c, k) => {
+      const row = document.createElement("div"), pick = document.createElement("button"),
+            del = document.createElement("button"), dot = document.createElement("i");
+      row.className = "cand"; pick.className = "pick"; del.className = "del"; dot.className = "dot";
+      pick.type = del.type = "button"; dot.style.background = css(COLORS[k]);
+      pick.appendChild(dot); pick.appendChild(document.createTextNode(label(c)));
+      del.textContent = "×"; del.setAttribute("aria-label", "删除 " + label(c));
+      pick.onclick = () => {
+        setCat(c.cat, false);
+        $("len").value = c.len; $("wid").value = c.wid; $("hei").value = c.hei; $("unit").value = c.unit;
+        $("paste").value = ""; dirty = true; view = "single"; clearTimeout(timer);
+        pendingAR = true; render();
       };
-      box.appendChild(b);
+      del.onclick = () => { cands.splice(k, 1); store("cands", cands); drawCands(); if (view === "compare") render(); };
+      row.appendChild(pick); row.appendChild(del); box.appendChild(row);
     });
+    const cmp = $("cmp"); cmp.hidden = cands.length < 2;
+    cmp.textContent = "把这 " + cands.length + " 个一起放到地上对比";
   }
-
-  go.addEventListener("click", () => {
-    if (!mv.canActivateAR) {
-      const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), android = /Android/.test(ua);
-      msg.textContent = ios ? "这个浏览器打不开 AR。请把网址复制到 Safari 里打开（微信等 App 内置浏览器不支持）。"
-        : android ? "这台手机的浏览器打不开 AR。请用 Chrome 打开，并确认手机装有“Google Play Services for AR”（部分没有谷歌服务的机型不支持）。"
-        : "电脑上只能看预览。请用手机打开这个网页：iPhone 用 Safari，安卓用 Chrome。";
-      msg.classList.add("show");
-      return;
-    }
-    saveRecent();
-    mv.activateAR();
+  $("add").addEventListener("click", () => {
+    const it = inputItem();
+    if (!dims(it).ok) return say("先输入一个有效的尺寸，再加入候选。");
+    const key = JSON.stringify(it);
+    if (cands.some(c => JSON.stringify(c) === key)) return say("这个尺寸已经在候选里了。");
+    if (cands.length >= MAX) return say("最多放 " + MAX + " 个候选，先删掉一个再加。");
+    msg.classList.remove("show");
+    cands.push(it); store("cands", cands); drawCands();
   });
+  $("cmp").addEventListener("click", () => { view = "compare"; clearTimeout(timer); pendingAR = true; render(); });
 
+  setCat("rug", true);
   customElements.whenDefined("model-viewer").then(render);
   setTimeout(() => {
-    if (!customElements.get("model-viewer")) {
-      msg.textContent = "3D 组件没有加载出来，请检查网络后刷新页面。"; msg.classList.add("show");
-    }
+    if (!customElements.get("model-viewer")) say("3D 组件没有加载出来，请检查网络后刷新页面。");
   }, 8000);
-  drawRecent();
+  drawCands();
 })();
 </script>
 </body>
