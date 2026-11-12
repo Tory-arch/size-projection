@@ -2,173 +2,132 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>尺寸投影</title>
-<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.4.0/dist/model-viewer.min.js"></script>
+<script>
+  /* ====== 在这里填 Variant Launch 的 SDK 密钥（launchar.app 后台里的 SDK Key） ====== */
+  window.LAUNCH_KEY = "YOUR_SDK_KEY";
+  /* ============================================================================== */
+  if (window.LAUNCH_KEY && window.LAUNCH_KEY !== "YOUR_SDK_KEY")
+    document.write('<script src="https://launchar.app/sdk/v1?key=' + encodeURIComponent(window.LAUNCH_KEY) + '&redirect=true"><\/script>');
+</script>
 <style>
-  :root { --bg:#f4f1ec; --card:#fff; --ink:#22252a; --sub:#6b7280; --line:#e3ded6; --accent:#e2603a; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans","Noto Sans SC",sans-serif;
-    -webkit-text-size-adjust:100%; }
-  main { max-width:520px; margin:0 auto; padding:20px 16px 40px; }
-  h1 { font-size:24px; margin:4px 0 4px; }
-  .lead { color:var(--sub); font-size:14px; margin:0 0 16px; line-height:1.5; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
-  .cats { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:16px; }
-  .cats button { border:1px solid var(--line); background:#fff; border-radius:12px; padding:8px 0 7px; font-size:12px; color:var(--sub);
-    display:flex; flex-direction:column; align-items:center; gap:2px; }
-  .cats button i { font-style:normal; font-size:22px; line-height:1.2; }
-  .cats button.on { border-color:var(--accent); background:#fdf1ec; color:var(--ink); font-weight:600; }
-  label { display:block; font-size:13px; color:var(--sub); margin-bottom:6px; }
-  .row { display:flex; gap:10px; }
-  .row > div { flex:1; min-width:0; }
-  input, select { width:100%; font-size:18px; padding:11px 10px; border:1px solid var(--line); border-radius:10px;
-    background:#fff; color:var(--ink); -webkit-appearance:none; appearance:none; }
-  input:focus, select:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .paste { margin-bottom:14px; }
-  .paste input { font-size:15px; }
-  .unit { width:92px; flex:none !important; }
-  model-viewer { width:100%; height:240px; background:linear-gradient(#faf8f4,#ece7df); border-radius:12px; }
-  .summary { text-align:center; font-size:14px; color:var(--sub); margin:10px 0 0; }
-  .go { display:block; width:100%; border:0; border-radius:14px; background:var(--accent); color:#fff;
-    font-size:18px; font-weight:600; padding:16px; margin-top:4px; }
-  .go:disabled { opacity:.45; }
-  .msg { display:none; margin-top:12px; padding:12px; border-radius:10px; background:#fff4e5; color:#7a4a00; font-size:14px; line-height:1.6; }
-  .msg.show { display:block; }
-  .tips { font-size:13px; color:var(--sub); line-height:1.7; padding-left:18px; margin:8px 0 0; }
-  .add { display:block; width:100%; margin-top:12px; border:1px dashed var(--line); background:none; border-radius:10px;
-    padding:10px; font-size:14px; color:var(--ink); }
-  .cands { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
-  .cand { display:flex; align-items:stretch; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; }
-  .cand .pick { flex:1; display:flex; align-items:center; gap:10px; border:0; background:none; padding:14px 12px; font-size:16px; color:var(--ink); text-align:left; }
-  .cand .del { border:0; border-left:1px solid var(--line); background:none; width:46px; font-size:18px; color:var(--sub); }
-  .dot { width:14px; height:14px; border-radius:4px; flex:none; display:inline-block; }
-  .cmp { display:block; width:100%; margin-top:10px; border:0; border-radius:12px; background:var(--ink); color:#fff; font-size:15px; font-weight:600; padding:13px; }
-  .legend { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; }
-  .legend span { display:inline-flex; align-items:center; gap:6px; }
-  .hint { font-size:12px; color:var(--sub); margin:8px 0 0; line-height:1.5; }
-  h2 { font-size:14px; margin:0; color:var(--sub); font-weight:600; }
+  :root { --accent:#e2603a; --ink:#22252a; --sub:#6b7280; --line:#e3ded6; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; height:100%; overflow:hidden; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans","Noto Sans SC",sans-serif; color:var(--ink);
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+
+  /* ---------- 进入相机前的首页 ---------- */
+  #app { position:fixed; inset:0; z-index:5; background:#f4f1ec; display:flex; flex-direction:column; justify-content:center;
+    padding:28px 22px; overflow:auto; }
+  #app h1 { font-size:28px; margin:0 0 8px; }
+  #app p { color:var(--sub); font-size:15px; line-height:1.6; margin:0 0 14px; }
+  #app ol { color:var(--sub); font-size:14px; line-height:1.8; padding-left:20px; margin:0 0 22px; }
+  #start { border:0; border-radius:14px; background:var(--accent); color:#fff; font-size:18px; font-weight:600; padding:16px; width:100%; }
+  #start:disabled { opacity:.4; }
+  #status { margin-top:14px; padding:12px; border-radius:10px; background:#fff4e5; color:#7a4a00; font-size:14px; line-height:1.6; display:none; }
+  #status.show { display:block; }
+  #status a { color:inherit; font-weight:600; }
+  #app .alt { margin-top:18px; font-size:13px; text-align:center; }
+  #app .alt a { color:var(--sub); }
+
+  /* ---------- 相机里的操作界面 ---------- */
+  #overlay { display:none; position:fixed; inset:0; z-index:10; pointer-events:none; color:#fff; }
+  #overlay.on { display:block; }
+  #overlay > * { pointer-events:auto; }
+  #top { position:absolute; left:0; right:0; top:0; padding:calc(10px + env(safe-area-inset-top)) 12px 10px; display:flex; gap:10px; align-items:flex-start;
+    background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0)); pointer-events:none !important; }
+  #top > * { pointer-events:auto; }
+  #hud { flex:1; min-width:0; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  #hint { font-size:15px; font-weight:600; line-height:1.4; }
+  #sum { font-size:13px; opacity:.9; margin-top:2px; }
+  #exit { border:0; border-radius:999px; background:rgba(0,0,0,.5); color:#fff; font-size:14px; padding:8px 14px; }
+  #cross { position:absolute; left:50%; top:42%; width:26px; height:26px; margin:-13px 0 0 -13px; border:2px solid rgba(255,255,255,.9); border-radius:50%;
+    box-shadow:0 0 0 1px rgba(0,0,0,.35); pointer-events:none !important; }
+  #cross::after { content:""; position:absolute; left:50%; top:50%; width:4px; height:4px; margin:-2px 0 0 -2px; background:#fff; border-radius:50%; }
+
+  #panel { position:absolute; left:0; right:0; bottom:0; padding:10px 12px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(20,22,26,.78); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-radius:18px 18px 0 0; }
+  #cats { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+  #cats::-webkit-scrollbar { display:none; }
+  #cats button { flex:none; border:1px solid rgba(255,255,255,.22); background:none; color:#fff; border-radius:999px; padding:6px 12px; font-size:14px; white-space:nowrap; }
+  #cats button.on { background:#fff; color:var(--ink); border-color:#fff; font-weight:600; }
+  #dims { display:flex; gap:6px; margin-bottom:8px; }
+  .fld { flex:1; min-width:0; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#fff; border-radius:10px; padding:5px 4px; text-align:center; }
+  .fld small { display:block; font-size:11px; opacity:.7; }
+  .fld b { font-size:18px; font-weight:600; }
+  .fld.on { border-color:var(--accent); background:rgba(226,96,58,.25); }
+  .fld[hidden] { display:none; }
+  #steps { display:flex; gap:6px; margin-bottom:10px; }
+  #steps button { flex:1; border:0; border-radius:10px; background:rgba(255,255,255,.14); color:#fff; font-size:15px; padding:9px 0; }
+  #steps button.key { flex:.8; font-size:13px; }
+  #acts { display:flex; gap:8px; align-items:stretch; }
+  #acts .rot { flex:none; width:58px; border:0; border-radius:14px; background:rgba(255,255,255,.14); color:#fff; font-size:22px; }
+  #main { flex:1; border:0; border-radius:14px; background:var(--accent); color:#fff; font-size:18px; font-weight:700; padding:15px 0; }
+  #main:disabled { opacity:.45; }
+  #more { display:flex; gap:8px; margin-top:8px; }
+  #more button { flex:1; border:1px solid rgba(255,255,255,.22); background:none; color:#fff; border-radius:10px; font-size:14px; padding:8px 0; }
+  #more button[hidden] { display:none; }
+  #typer { position:absolute; left:12px; right:12px; top:calc(70px + env(safe-area-inset-top)); display:none; gap:8px; background:rgba(20,22,26,.92); padding:10px; border-radius:12px; }
+  #typer.on { display:flex; }
+  #typer input { flex:1; min-width:0; font-size:20px; padding:8px 10px; border-radius:8px; border:0; -webkit-user-select:text; user-select:text; }
+  #typer button { border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:16px; padding:0 16px; }
 </style>
 </head>
 <body>
-<main>
+
+<div id="overlay">
+  <div id="top">
+    <div id="hud"><div id="hint"></div><div id="sum"></div></div>
+    <button id="exit" type="button">退出</button>
+  </div>
+  <div id="cross"></div>
+  <div id="typer"><input id="typerIn" type="number" inputmode="decimal" step="any"><button id="typerOk" type="button">确定</button></div>
+  <div id="panel">
+    <div id="cats"></div>
+    <div id="dims">
+      <button class="fld" type="button" data-i="0"><small></small><b></b></button>
+      <button class="fld" type="button" data-i="1"><small></small><b></b></button>
+      <button class="fld" type="button" data-i="2"><small></small><b></b></button>
+    </div>
+    <div id="steps">
+      <button type="button" data-d="-10">−10</button><button type="button" data-d="-1">−1</button>
+      <button type="button" class="key" id="keyb">输入</button>
+      <button type="button" data-d="1">＋1</button><button type="button" data-d="10">＋10</button>
+    </div>
+    <div id="acts">
+      <button class="rot" type="button" id="rotL" aria-label="向左旋转">↺</button>
+      <button id="main" type="button">放置</button>
+      <button class="rot" type="button" id="rotR" aria-label="向右旋转">↻</button>
+    </div>
+    <div id="more">
+      <button type="button" id="bMove" hidden>移动</button>
+      <button type="button" id="bDel" hidden>删除</button>
+      <button type="button" id="bClear" hidden>清空</button>
+      <button type="button" id="bCancel" hidden>取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
   <h1>尺寸投影</h1>
-  <p class="lead">选品类、输入商家给的尺寸，用相机把它按真实大小放在你家地上。</p>
+  <p>像在游戏里摆家具一样：用准星瞄准地面，按真实尺寸放下，再随时改尺寸、旋转、挪位置。</p>
+  <ol>
+    <li>进入相机后，对着地面慢慢移动手机，直到出现绿色虚影。</li>
+    <li>在底部选品类、调尺寸（单位：厘米），虚影会实时变化。</li>
+    <li>点“放置”固定；放下后改尺寸会直接作用在这件物体上。</li>
+  </ol>
+  <button id="start" type="button" disabled>进入相机</button>
+  <div id="status"></div>
+  <div class="alt"><a href="classic.html">用旧版（系统自带 AR 预览）</a></div>
+</div>
 
-  <div class="card">
-    <div class="cats" id="cats"></div>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
-    <div class="paste">
-      <label for="paste">直接粘贴商家写的尺寸（可选）</label>
-      <input id="paste" type="text" inputmode="text" placeholder="例如 160×230 或 80*40*120" autocomplete="off">
-    </div>
-
-    <div class="row">
-      <div><label for="len" id="lblLen">长</label><input id="len" type="number" inputmode="decimal" min="0" step="any" value="160"></div>
-      <div><label for="wid" id="lblWid">宽</label><input id="wid" type="number" inputmode="decimal" min="0" step="any" value="230"></div>
-      <div id="hBox" hidden><label for="hei" id="lblHei">高</label><input id="hei" type="number" inputmode="decimal" min="0" step="any" value="80"></div>
-      <div class="unit"><label for="unit">单位</label>
-        <select id="unit"><option value="0.01">厘米</option><option value="0.001">毫米</option><option value="1">米</option><option value="0.0254">英寸</option></select>
-      </div>
-    </div>
-    <button class="add" id="add" type="button">＋ 把这个尺寸加入候选</button>
-  </div>
-
-  <div class="card" id="candCard" hidden>
-    <h2>候选尺寸</h2>
-    <div class="cands" id="cands"></div>
-    <button class="cmp" id="cmp" type="button" hidden></button>
-    <p class="hint">点某个候选会直接进相机；从相机返回后，再点另一个就能马上换。</p>
-  </div>
-
-  <div class="card">
-    <model-viewer id="mv" ar ar-modes="webxr quick-look" ar-scale="fixed" ar-placement="floor"
-      camera-controls touch-action="pan-y" shadow-intensity="1" camera-orbit="35deg 65deg auto"
-      interaction-prompt="none" alt="按输入尺寸生成的简化模型">
-      <span slot="ar-button"></span>
-    </model-viewer>
-    <p class="summary" id="summary"></p>
-  </div>
-
-  <button class="go" id="go" type="button" disabled>打开相机，放到地上看看</button>
-  <div class="msg" id="msg"></div>
-
-  <div class="card" style="margin-top:14px">
-    <h2>使用方法</h2>
-    <ol class="tips">
-      <li>点上面的按钮，允许使用相机，然后拿手机对着地面慢慢左右移动几下，让它认出地板。</li>
-      <li>模型出现后，单指拖动可以挪位置，双指旋转可以转方向。大小是锁定的，不会被误缩放。</li>
-      <li>模型是按尺寸生成的简化外形，外轮廓和你输入的长宽高一致，细节（桌腿粗细、柜门数量等）只是示意。</li>
-      <li>在几个尺寸之间犹豫时，先把它们都“加入候选”，再点“一起放到地上对比”，不同颜色代表不同尺寸，不用来回切换。</li>
-      <li>光线充足、地面有纹理时最准；纯白反光的地板识别会慢一些。误差通常在几厘米以内，适合判断“放不放得下”，不适合卡着毫米下单。</li>
-    </ol>
-  </div>
-
-</main>
-
-<script>
-/* ---------- 生成一个真实尺寸（单位：米）的方块 GLB 模型 ---------- */
-function buildGLB(items) {
-  // items: [{w,h,d, x,y,z, rgba}]  w=长(x) h=高(y) d=宽(z)；x/z 是中心偏移，y 是底面高度
-  const json = {
-    asset: { version: "2.0", generator: "size-projector" },
-    scene: 0, scenes: [{ nodes: [] }], nodes: [], meshes: [], materials: [],
-    accessors: [], bufferViews: [], buffers: [{ byteLength: items.length * 648 }]
-  };
-  const bin = new Uint8Array(items.length * 648);
-  items.forEach((it, k) => {
-    const x0 = (it.x || 0) - it.w / 2, x1 = (it.x || 0) + it.w / 2;
-    const z0 = (it.z || 0) - it.d / 2, z1 = (it.z || 0) + it.d / 2;
-    const y0 = it.y || 0, y1 = y0 + it.h;
-    const faces = [
-      { n: [0, 0, 1],  v: [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]] },
-      { n: [0, 0, -1], v: [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]] },
-      { n: [1, 0, 0],  v: [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]] },
-      { n: [-1, 0, 0], v: [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]] },
-      { n: [0, 1, 0],  v: [[x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0]] },
-      { n: [0, -1, 0], v: [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]] }
-    ];
-    const pos = new Float32Array(72), nor = new Float32Array(72), idx = new Uint16Array(36);
-    faces.forEach((f, i) => {
-      f.v.forEach((p, j) => { pos.set(p, (i * 4 + j) * 3); nor.set(f.n, (i * 4 + j) * 3); });
-      const b = i * 4;
-      idx.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
-    });
-    const o = k * 648;
-    bin.set(new Uint8Array(pos.buffer), o);
-    bin.set(new Uint8Array(nor.buffer), o + 288);
-    bin.set(new Uint8Array(idx.buffer), o + 576);
-    const f32 = v => Math.fround(v);
-    json.bufferViews.push(
-      { buffer: 0, byteOffset: o, byteLength: 288, target: 34962 },
-      { buffer: 0, byteOffset: o + 288, byteLength: 288, target: 34962 },
-      { buffer: 0, byteOffset: o + 576, byteLength: 72, target: 34963 });
-    json.accessors.push(
-      { bufferView: k * 3, componentType: 5126, count: 24, type: "VEC3",
-        min: [f32(x0), f32(y0), f32(z0)], max: [f32(x1), f32(y1), f32(z1)] },
-      { bufferView: k * 3 + 1, componentType: 5126, count: 24, type: "VEC3" },
-      { bufferView: k * 3 + 2, componentType: 5123, count: 36, type: "SCALAR" });
-    json.materials.push({ name: "m" + k,
-      pbrMetallicRoughness: { baseColorFactor: it.rgba, metallicFactor: 0, roughnessFactor: 0.9 },
-      alphaMode: it.rgba[3] < 1 ? "BLEND" : "OPAQUE" });
-    json.meshes.push({ primitives: [{ attributes: { POSITION: k * 3, NORMAL: k * 3 + 1 }, indices: k * 3 + 2, material: k }] });
-    json.nodes.push({ mesh: k, name: "box" + k });
-    json.scenes[0].nodes.push(k);
-  });
-  let jb = new TextEncoder().encode(JSON.stringify(json));
-  const pad = (4 - jb.length % 4) % 4;
-  if (pad) { const t = new Uint8Array(jb.length + pad).fill(0x20); t.set(jb); jb = t; }
-  const total = 12 + 8 + jb.length + 8 + bin.length;
-  const out = new Uint8Array(total), dv = new DataView(out.buffer);
-  dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, total, true);
-  dv.setUint32(12, jb.length, true); dv.setUint32(16, 0x4E4F534A, true); out.set(jb, 20);
-  const o = 20 + jb.length;
-  dv.setUint32(o, bin.length, true); dv.setUint32(o + 4, 0x004E4942, true); out.set(bin, o + 8);
-  return out;
-}
-
-/* ---------- 品类：每个品类用几个方块拼出简化模型，外轮廓严格等于输入的尺寸 ---------- */
+/* 品类：每个品类用几个方块拼出简化模型，外轮廓严格等于输入的尺寸 */
 const B = (w, h, d, x, y, z, s) => ({ w, h, d, x, y, z, s });   // x/z 为中心，y 为底面高度，s 为配色 a/b/c
 const WOOD = [[0.74,0.56,0.37],[0.52,0.38,0.25],[0.22,0.22,0.24]];
 const CATS = {
@@ -257,187 +216,269 @@ const CATS = {
 };
 const RUG_H = 0.012;
 
-/* 把一个或多个物品摆好并上色。全是地毯 → 中心对齐、小的叠在大的上面；否则 → 并排，间隔 10 厘米 */
-function layout(list) {
-  // list: [{cat,l,w,h,pal}]（米），pal 不传则用品类自己的配色
-  const place = (it, dx, dy) => CATS[it.cat].parts(it.l, it.w, it.h).map(p => {
-    const pal = it.pal || CATS[it.cat].pal, c = pal["abc".indexOf(p.s)];
-    return { w: p.w, h: p.h, d: p.d, x: p.x + dx, y: p.y + dy, z: p.z, rgba: [c[0], c[1], c[2], 1] };
-  });
-  if (list.length > 1 && list.every(i => CATS[i.cat].flat)) {
-    const order = list.map((it, k) => k).sort((a, b) => list[b].l * list[b].w - list[a].l * list[a].w);
-    return [].concat(...order.map((k, rank) => place(list[k], 0, rank * RUG_H)));
+const $ = id => document.getElementById(id);
+const KEY_SET = window.LAUNCH_KEY && window.LAUNCH_KEY !== "YOUR_SDK_KEY";
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const overlay = $("overlay"), app = $("app"), startBtn = $("start"), statusBox = $("status"), mainBtn = $("main");
+
+/* ---------- three.js 场景 ---------- */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.01, 40);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8c8c8c, 2.4));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(1.5, 4, 2); scene.add(sun);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.xr.enabled = true;
+document.body.insertBefore(renderer.domElement, document.body.firstChild);
+addEventListener("resize", () => {
+  if (renderer.xr.isPresenting) return;
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+});
+
+const ghostMat = new THREE.MeshBasicMaterial({ color: 0x35d07f, transparent: true, opacity: 0.36, depthWrite: false });
+const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
+const footMat = new THREE.LineBasicMaterial({ color: 0xffe14d });
+
+const meters = it => { const C = CATS[it.cat]; return [it.d[0] / 100, it.d[1] / 100, C.flat ? RUG_H : it.d[2] / 100]; };
+
+function makeGroup(it, ghost) {
+  const C = CATS[it.cat], [l, w, h] = meters(it), g = new THREE.Group();
+  for (const p of C.parts(l, w, h)) {
+    const geo = new THREE.BoxGeometry(p.w, p.h, p.d);
+    const c = C.pal["abc".indexOf(p.s)];
+    const mat = ghost ? ghostMat
+      : new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(c[0], c[1], c[2], THREE.SRGBColorSpace), roughness: 0.85, metalness: 0 });
+    const m = new THREE.Mesh(geo, mat); m.position.set(p.x, p.y + p.h / 2, p.z); g.add(m);
+    if (ghost) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat); e.position.copy(m.position); g.add(e); }
   }
-  const gap = 0.1, total = list.reduce((s, i) => s + i.l, 0) + gap * (list.length - 1);
-  let cur = -total / 2; const out = [];
-  list.forEach(it => { out.push(...place(it, cur + it.l / 2, 0)); cur += it.l + gap; });
-  return out;
+  const y = 0.004, pts = [[-l / 2, -w / 2], [l / 2, -w / 2], [l / 2, w / 2], [-l / 2, w / 2]].map(([x, z]) => new THREE.Vector3(x, y, z));
+  const foot = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), footMat);
+  foot.name = "foot"; foot.visible = false; g.add(foot);
+  g.userData.item = it;
+  return g;
+}
+function disposeGroup(g) {
+  g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== ghostMat && o.material !== edgeMat && o.material !== footMat) o.material.dispose(); });
 }
 
-/* 从 “160×230cm” “80*40*120” 这类文字里取出数字 */
-function parseSizes(text) {
-  return (text.match(/\d+(?:\.\d+)?/g) || []).map(Number).filter(n => n > 0).slice(0, 3);
+/* ---------- 状态 ---------- */
+let session = null, hitSource = null, floorFound = false, lastHitT = 0;
+let mode = "aim";          // aim：虚影跟着准星走；view：已放下，可以走动观察
+let cur = null;            // 当前正在调整的物体（虚影，或已放下并选中的那件）
+let hovered = null;        // view 模式下准星指着的另一件已放物体
+let active = 0;            // 正在调的是第几个尺寸
+const placed = [], mem = {};
+const camPos = new THREE.Vector3(), camDir = new THREE.Vector3(), tmp = new THREE.Vector3();
+const ray = new THREE.Raycaster();
+
+function newItem(cat, d, yaw, needFace) { return { cat, d: d.slice(), yaw: yaw || 0, needFace: !!needFace, group: null }; }
+
+// 按 cur 的当前品类/尺寸重建模型，位置和朝向保持不变
+function rebuild() {
+  const old = cur.group, ghost = mode === "aim", g = makeGroup(cur, ghost);
+  if (old) { g.position.copy(old.position); g.visible = old.visible; scene.remove(old); disposeGroup(old); } else g.visible = false;
+  g.rotation.y = cur.yaw;
+  if (!ghost) g.getObjectByName("foot").visible = true;
+  cur.group = g; scene.add(g); drawPanel();
+}
+function setSelected(it, on) { if (it && it.group) { const f = it.group.getObjectByName("foot"); if (f) f.visible = on; } }
+function removeItem(it) {
+  const i = placed.indexOf(it); if (i >= 0) placed.splice(i, 1);
+  if (it.group) { scene.remove(it.group); disposeGroup(it.group); it.group = null; }
+}
+function startGhost(it) {        // 进入瞄准模式，it 作为虚影
+  setSelected(cur, false);
+  mode = "aim"; hovered = null; cur = it; cur.group = null; rebuild();
+}
+function selectPlaced(it) {      // 进入观察模式，选中一件已放物体
+  setSelected(cur, false);
+  mode = "view"; hovered = null; cur = it; setSelected(cur, true); drawPanel();
 }
 
-if (typeof module !== "undefined") module.exports = { buildGLB, parseSizes, layout, CATS };
-</script>
+/* ---------- 底部面板 ---------- */
+Object.keys(CATS).forEach(k => {
+  const b = document.createElement("button"); b.type = "button"; b.dataset.cat = k;
+  b.textContent = CATS[k].icon + " " + CATS[k].name;
+  b.onclick = () => {
+    if (!cur || cur.cat === k) return;
+    mem[cur.cat] = cur.d.slice();
+    cur.cat = k; cur.d = (mem[k] || CATS[k].def.concat(CATS[k].flat ? [1] : [])).slice(0, 3);
+    if (cur.d.length < 3) cur.d.push(1);
+    active = 0; closeTyper(); rebuild();
+  };
+  $("cats").appendChild(b);
+});
+const flds = [...document.querySelectorAll(".fld")];
+flds.forEach(f => f.onclick = () => { active = +f.dataset.i; closeTyper(); drawPanel(); });
 
-<script>
-(function () {
-  const $ = id => document.getElementById(id);
-  const mv = $("mv"), go = $("go"), msg = $("msg");
-  const MAX = 4;
-  const COLORS = [[0.89,0.38,0.23],[0.16,0.47,0.85],[0.18,0.62,0.38],[0.58,0.35,0.78]];
-  const css = c => "rgb(" + c.map(v => Math.round(v * 255)).join(",") + ")";
-  const tint = c => [c, c.map(v => v * 0.7), c.map(v => v * 0.35 + 0.65)];   // 对比时整件物品染成候选色
-  let cat = "rug", view = "single", url = null, timer = null, pendingAR = false, dirty = false;
-
-  function store(k, v) {
-    try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }
-    catch (e) { return null; }
-  }
-  let cands = (store("cands") || []).filter(c => c && CATS[c.cat]).slice(0, MAX);
-
-  function inputItem() { return { cat, len: $("len").value, wid: $("wid").value, hei: $("hei").value, unit: $("unit").value }; }
-  function dims(it) {
-    const u = parseFloat(it.unit), l = parseFloat(it.len) * u, w = parseFloat(it.wid) * u;
-    const h = CATS[it.cat].flat ? RUG_H : parseFloat(it.hei) * u;
-    return { cat: it.cat, l, w, h, ok: [l, w, h].every(n => isFinite(n) && n >= 0.01 && n <= 20) };
-  }
-  function label(it) {
-    const un = $("unit").querySelector('option[value="' + it.unit + '"]');
-    return CATS[it.cat].name + " " + (CATS[it.cat].flat ? [it.len, it.wid] : [it.len, it.wid, it.hei]).join("×") + " " + (un ? un.textContent : "");
-  }
-  function fmt(m) { return m >= 1 ? (+m.toFixed(2)) + " 米" : (+(m * 100).toFixed(1)) + " 厘米"; }
-  function say(t) { msg.textContent = t; msg.classList.add("show"); }
-
-  function show(boxes) {
-    go.disabled = true;
-    const old = url;
-    url = URL.createObjectURL(new Blob([buildGLB(boxes)], { type: "model/gltf-binary" }));
-    mv.src = url;
-    if (old) setTimeout(() => URL.revokeObjectURL(old), 3000);
-  }
-
-  function render() {
-    msg.classList.remove("show");
-    const sum = $("summary");
-    if (view === "compare" && cands.length >= 2) {
-      const list = cands.map((c, k) => Object.assign(dims(c), { pal: tint(COLORS[k]) }));
-      sum.textContent = "";
-      const lg = document.createElement("div"); lg.className = "legend";
-      cands.forEach((c, k) => {
-        const s = document.createElement("span"), d = document.createElement("i");
-        d.className = "dot"; d.style.background = css(COLORS[k]);
-        s.appendChild(d); s.appendChild(document.createTextNode(label(c))); lg.appendChild(s);
-      });
-      sum.appendChild(lg);
-      const note = document.createElement("div");
-      note.textContent = list.every(i => CATS[i.cat].flat) ? "中心对齐，小的叠在大的上面" : "并排摆放，间隔 10 厘米";
-      sum.appendChild(note);
-      go.textContent = "打开相机，一起放到地上对比";
-      show(layout(list));
-      return;
-    }
-    view = "single";
-    go.textContent = "打开相机，放到地上看看";
-    const s = dims(inputItem()), L = CATS[cat].labels;
-    if (!s.ok) { pendingAR = false; go.disabled = true; sum.textContent = "请输入有效的尺寸（每边 1 厘米到 20 米之间）"; return; }
-    sum.textContent = CATS[cat].flat
-      ? L[0] + " " + fmt(s.l) + " × " + L[1] + " " + fmt(s.w) + "，占地 " + (+(s.l * s.w).toFixed(2)) + " 平方米"
-      : L[0] + " " + fmt(s.l) + " × " + L[1] + " " + fmt(s.w) + " × " + L[2] + " " + fmt(s.h);
-    show(layout([s]));
-  }
-  function edited() { dirty = true; view = "single"; pendingAR = false; clearTimeout(timer); timer = setTimeout(render, 250); }
-
-  function openAR() {
-    if (!mv.canActivateAR) {
-      const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), android = /Android/.test(ua);
-      say(ios ? "这个浏览器打不开 AR。请把网址复制到 Safari 里打开（微信等 App 内置浏览器不支持）。"
-        : android ? "这台手机的浏览器打不开 AR。请用 Chrome 打开，并确认手机装有“Google Play Services for AR”（部分没有谷歌服务的机型不支持）。"
-        : "电脑上只能看预览。请用手机打开这个网页：iPhone 用 Safari，安卓用 Chrome。");
-      return;
-    }
-    mv.activateAR();
-  }
-  mv.addEventListener("load", () => {
-    go.disabled = false;
-    if (pendingAR) { pendingAR = false; if (mv.canActivateAR) openAR(); }
+function drawPanel() {
+  if (!cur) return;
+  const C = CATS[cur.cat], n = C.flat ? 2 : 3;
+  if (active >= n) active = 0;
+  document.querySelectorAll("#cats button").forEach(b => b.classList.toggle("on", b.dataset.cat === cur.cat));
+  flds.forEach((f, i) => {
+    f.hidden = i >= n; if (i >= n) return;
+    f.classList.toggle("on", i === active);
+    f.querySelector("small").textContent = C.labels[i] + "（厘米）";
+    f.querySelector("b").textContent = cur.d[i];
   });
-  go.addEventListener("click", openAR);
+  $("sum").textContent = C.name + " " + cur.d.slice(0, n).join(" × ") + " 厘米" + (placed.length ? "　·　已放 " + placed.length + " 件" : "");
+  $("bMove").hidden = $("bDel").hidden = mode !== "view";
+  $("bClear").hidden = !(mode === "view" && placed.length > 1);
+  $("bCancel").hidden = !(mode === "aim" && placed.length > 0);
+}
+function setDim(v) {
+  if (!cur || !isFinite(v)) return;
+  v = Math.min(2000, Math.max(1, Math.round(v * 10) / 10));
+  if (cur.d[active] === v) return;
+  cur.d[active] = v; rebuild();
+}
+// 按一下执行一次，按住连续执行
+function hold(el, fn) {
+  let t1 = null, t2 = null;
+  const stop = () => { clearTimeout(t1); clearInterval(t2); t1 = t2 = null; };
+  el.addEventListener("pointerdown", e => { e.preventDefault(); stop(); fn(true); t1 = setTimeout(() => { t2 = setInterval(() => fn(false), 80); }, 350); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(n => el.addEventListener(n, stop));
+  el.addEventListener("contextmenu", e => e.preventDefault());
+}
+document.querySelectorAll("#steps button[data-d]").forEach(b => hold(b, () => { if (cur) setDim(cur.d[active] + (+b.dataset.d)); }));
+const rotate = dir => first => { if (!cur) return; cur.yaw += dir * (first ? 15 : 4) * Math.PI / 180; if (cur.group) cur.group.rotation.y = cur.yaw; };
+hold($("rotL"), rotate(1)); hold($("rotR"), rotate(-1));
 
-  /* ---------- 品类 ---------- */
-  function setCat(c, useDefaults) {
-    cat = c;
-    const C = CATS[c];
-    document.querySelectorAll("#cats button").forEach(b => b.classList.toggle("on", b.dataset.cat === c));
-    $("lblLen").textContent = C.labels[0]; $("lblWid").textContent = C.labels[1];
-    $("hBox").hidden = !!C.flat;
-    if (!C.flat) $("lblHei").textContent = C.labels[2];
-    if (useDefaults) {
-      $("unit").value = "0.01"; $("len").value = C.def[0]; $("wid").value = C.def[1];
-      if (!C.flat) $("hei").value = C.def[2];
+// 用键盘直接输入数字
+function closeTyper() { $("typer").classList.remove("on"); $("typerIn").blur(); }
+$("keyb").onclick = () => { if (!cur) return; const i = $("typerIn"); i.value = cur.d[active]; $("typer").classList.add("on"); i.focus(); i.select && i.select(); };
+$("typerOk").onclick = () => { setDim(parseFloat($("typerIn").value)); closeTyper(); };
+$("typerIn").addEventListener("keydown", e => { if (e.key === "Enter") $("typerOk").click(); });
+
+/* ---------- 主按钮和辅助按钮 ---------- */
+mainBtn.onclick = () => {
+  if (!cur) return;
+  if (mode === "aim") {                       // 放置
+    if (!cur.group || !cur.group.visible) return;
+    mode = "view"; rebuild(); placed.push(cur); setSelected(cur, true); drawPanel();
+  } else if (hovered && hovered !== cur) {    // 选中准星指着的那件
+    selectPlaced(hovered);
+  } else {                                    // 再放一个：同样的品类、尺寸、朝向
+    startGhost(newItem(cur.cat, cur.d, cur.yaw, false));
+  }
+};
+$("bMove").onclick = () => {                  // 把选中的物体重新拿起来
+  if (mode !== "view" || !cur) return;
+  const it = cur; removeItem(it); cur = null; startGhost(newItem(it.cat, it.d, it.yaw, false));
+};
+$("bDel").onclick = () => {
+  if (mode !== "view" || !cur) return;
+  const it = cur; removeItem(it); cur = null;
+  if (placed.length) selectPlaced(placed[placed.length - 1]); else startGhost(newItem(it.cat, it.d, it.yaw, false));
+};
+$("bClear").onclick = () => {
+  const it = cur; placed.slice().forEach(removeItem); cur = null;
+  startGhost(newItem(it.cat, it.d, it.yaw, false));
+};
+$("bCancel").onclick = () => {                // 放弃手里的虚影，回到观察
+  if (mode !== "aim" || !placed.length) return;
+  if (cur.group) { scene.remove(cur.group); disposeGroup(cur.group); }
+  cur = null; selectPlaced(placed[placed.length - 1]);
+};
+overlay.addEventListener("beforexrselect", e => e.preventDefault());
+
+/* ---------- 每一帧 ---------- */
+let lastLabel = "", lastHint = "";
+function setText(label, hint, enabled) {
+  if (label !== lastLabel) { mainBtn.textContent = label; lastLabel = label; }
+  if (hint !== lastHint) { $("hint").textContent = hint; lastHint = hint; }
+  if (mainBtn.disabled === enabled) mainBtn.disabled = !enabled;
+}
+function onFrame(t, frame) {
+  if (frame && session && cur) {
+    const ref = renderer.xr.getReferenceSpace();
+    let hit = null;
+    if (hitSource && ref) {
+      const r = frame.getHitTestResults(hitSource);
+      if (r.length) { const pose = r[0].getPose(ref); if (pose) { const m = pose.transform.matrix; hit = tmp.set(m[12], m[13], m[14]); } }
+    }
+    camera.getWorldPosition(camPos); camera.getWorldDirection(camDir);
+    if (hit) { floorFound = true; lastHitT = t; }
+
+    if (mode === "aim") {
+      const g = cur.group;
+      if (hit) {
+        if (!g.visible) {
+          g.position.copy(hit);
+          if (cur.needFace) { cur.yaw = Math.atan2(camPos.x - hit.x, camPos.z - hit.z); cur.needFace = false; }
+          g.visible = true;
+        } else g.position.lerp(hit, 0.4);
+        g.rotation.y = cur.yaw;
+      } else if (t - lastHitT > 700) g.visible = false;
+      setText("放置", !floorFound ? "对着地面，慢慢左右移动手机" : g.visible ? "瞄准想放的位置，点“放置”" : "把准星对准地面", g.visible);
+    } else {
+      ray.set(camPos, camDir);
+      const hits = ray.intersectObjects(placed.map(p => p.group), true).filter(h => h.object.isMesh);
+      let it = null;
+      if (hits.length) { let o = hits[0].object; while (o && !o.userData.item) o = o.parent; it = o ? o.userData.item : null; }
+      hovered = it && it !== cur ? it : null;
+      setText(hovered ? "选中这个" : "＋ 再放一个",
+        hovered ? "准星指着另一件：点“选中这个”来调整它" : "已放下。可以走近看；现在改尺寸、旋转都作用在这件上", true);
     }
   }
-  Object.keys(CATS).forEach(k => {
-    const b = document.createElement("button"), i = document.createElement("i");
-    b.type = "button"; b.dataset.cat = k; i.textContent = CATS[k].icon;
-    b.appendChild(i); b.appendChild(document.createTextNode(CATS[k].name));
-    // 自己改过尺寸就保留，没改过就换成这个品类的常见尺寸
-    b.onclick = () => { setCat(k, !dirty); view = "single"; pendingAR = false; clearTimeout(timer); render(); };
-    $("cats").appendChild(b);
-  });
+  renderer.render(scene, camera);
+}
 
-  ["len", "wid", "hei"].forEach(id => $(id).addEventListener("input", edited));
-  $("unit").addEventListener("change", edited);
-  $("paste").addEventListener("input", e => {
-    const n = parseSizes(e.target.value);
-    if (n.length < 2) return;
-    $("len").value = n[0]; $("wid").value = n[1];
-    if (n.length === 3) $("hei").value = n[2];
-    edited();
-  });
-
-  /* ---------- 候选尺寸 ---------- */
-  function drawCands() {
-    const box = $("cands"); box.textContent = "";
-    $("candCard").hidden = !cands.length;
-    cands.forEach((c, k) => {
-      const row = document.createElement("div"), pick = document.createElement("button"),
-            del = document.createElement("button"), dot = document.createElement("i");
-      row.className = "cand"; pick.className = "pick"; del.className = "del"; dot.className = "dot";
-      pick.type = del.type = "button"; dot.style.background = css(COLORS[k]);
-      pick.appendChild(dot); pick.appendChild(document.createTextNode(label(c)));
-      del.textContent = "×"; del.setAttribute("aria-label", "删除 " + label(c));
-      pick.onclick = () => {
-        setCat(c.cat, false);
-        $("len").value = c.len; $("wid").value = c.wid; $("hei").value = c.hei; $("unit").value = c.unit;
-        $("paste").value = ""; dirty = true; view = "single"; clearTimeout(timer);
-        pendingAR = true; render();
-      };
-      del.onclick = () => { cands.splice(k, 1); store("cands", cands); drawCands(); if (view === "compare") render(); };
-      row.appendChild(pick); row.appendChild(del); box.appendChild(row);
+/* ---------- 进入 / 退出相机 ---------- */
+async function enter() {
+  startBtn.disabled = true;
+  try {
+    session = await navigator.xr.requestSession("immersive-ar", {
+      requiredFeatures: ["local", "hit-test", "dom-overlay"], domOverlay: { root: overlay }
     });
-    const cmp = $("cmp"); cmp.hidden = cands.length < 2;
-    cmp.textContent = "把这 " + cands.length + " 个一起放到地上对比";
-  }
-  $("add").addEventListener("click", () => {
-    const it = inputItem();
-    if (!dims(it).ok) return say("先输入一个有效的尺寸，再加入候选。");
-    const key = JSON.stringify(it);
-    if (cands.some(c => JSON.stringify(c) === key)) return say("这个尺寸已经在候选里了。");
-    if (cands.length >= MAX) return say("最多放 " + MAX + " 个候选，先删掉一个再加。");
-    msg.classList.remove("show");
-    cands.push(it); store("cands", cands); drawCands();
-  });
-  $("cmp").addEventListener("click", () => { view = "compare"; clearTimeout(timer); pendingAR = true; render(); });
+  } catch (e) { startBtn.disabled = false; return showStatus("相机没能打开：" + (e && e.message ? e.message : e) + "。请确认已允许使用相机后再试。"); }
+  renderer.xr.setReferenceSpaceType("local");
+  await renderer.xr.setSession(session);
+  floorFound = false; lastHitT = 0; hitSource = null;
+  session.requestReferenceSpace("viewer").then(s => session.requestHitTestSource({ space: s })).then(src => { hitSource = src; })
+    .catch(e => { $("hint").textContent = "这台设备不支持地面识别：" + (e && e.message ? e.message : e); });
+  session.addEventListener("end", leave);
+  app.style.display = "none"; overlay.classList.add("on"); statusBox.classList.remove("show");
+  const def = CATS.rug;
+  cur = null; startGhost(newItem("rug", def.def.concat([1]), 0, true));
+  renderer.setAnimationLoop(onFrame);
+}
+function leave() {
+  renderer.setAnimationLoop(null);
+  placed.slice().forEach(removeItem);
+  if (cur && cur.group) { scene.remove(cur.group); disposeGroup(cur.group); }
+  cur = null; hovered = null; session = null; hitSource = null; closeTyper();
+  overlay.classList.remove("on"); app.style.display = ""; startBtn.disabled = false;
+}
+startBtn.onclick = enter;
+$("exit").onclick = () => { if (session) session.end(); };
 
-  setCat("rug", true);
-  customElements.whenDefined("model-viewer").then(render);
-  setTimeout(() => {
-    if (!customElements.get("model-viewer")) say("3D 组件没有加载出来，请检查网络后刷新页面。");
+function showStatus(html) { statusBox.innerHTML = html; statusBox.classList.add("show"); }
+async function check() {
+  let ok = false;
+  try { ok = !!(navigator.xr && await navigator.xr.isSessionSupported("immersive-ar")); } catch (e) {}
+  if (ok) { startBtn.disabled = false; statusBox.classList.remove("show"); return true; }
+  return false;
+}
+(async () => {
+  if (await check()) return;
+  if (!IOS) return showStatus(/Android/.test(navigator.userAgent)
+    ? "这个浏览器不支持网页 AR。请用 Chrome 打开，并确认手机装有“Google Play Services for AR”。"
+    : "请用手机打开这个网页。电脑上无法使用相机 AR。");
+  if (!KEY_SET) return showStatus("iPhone 需要通过 Variant Launch 才能使用这个模式，但页面里还没有填 SDK 密钥。暂时可以先用下面的旧版。");
+  showStatus("正在切换到 AR 模式…");
+  // iPhone：SDK 初始化后要么自动跳转到 Launch，要么（已经在 Launch 里）提供 WebXR
+  addEventListener("vlaunch-initialized", async e => {
+    if (await check()) return;
+    const d = e.detail || {};
+    if (d.launchUrl) showStatus('需要先打开 AR 模式：<a href="' + d.launchUrl + '">点这里继续</a>，然后在弹出的卡片上点“打开”。');
+  });
+  setTimeout(async () => {
+    if (startBtn.disabled && !(await check()) && statusBox.textContent.indexOf("正在切换") === 0)
+      showStatus("AR 模式没有启动。常见原因：SDK 密钥不对，或这个网址还没有在 Variant Launch 后台加入授权域名。");
   }, 8000);
-  drawCands();
 })();
 </script>
 </body>
